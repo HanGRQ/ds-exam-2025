@@ -5,6 +5,7 @@ import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { findCrewByMovieAndRole } from '../shared/util';
+import { movieCrew } from '../seed/movies';
 
 const client = createDDbDocClient();
 
@@ -35,27 +36,42 @@ export const getCrewByMovieIdAndRole = async (event: APIGatewayProxyEvent): Prom
   const movieId = event.pathParameters?.movieId;
   const role = event.queryStringParameters?.role;
 
-  if (!movieId || !role) {
+  if (!movieId) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ message: 'Missing movieId or role' }),
+      body: JSON.stringify({ message: 'Missing movieId' }),
     };
   }
 
-  const crew = findCrewByMovieAndRole(Number(movieId), role); 
+  const movieIdNum = Number(movieId);
 
-  if (!crew) {
+  if (role) {
+    const crew = findCrewByMovieAndRole(movieIdNum, role);
+    if (!crew) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'Crew member not found for role: ' + role }),
+      };
+    }
+
     return {
-      statusCode: 404,
-      body: JSON.stringify({ message: 'Crew member not found' }),
+      statusCode: 200,
+      body: JSON.stringify(crew),
+    };
+  } else {
+    const crewList = movieCrew.filter(c => c.movieId === movieIdNum);
+    if (crewList.length === 0) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'No crew found for movieId: ' + movieId }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(crewList),
     };
   }
-
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify(crew),
-  };
 };
 
 function createDDbDocClient() {
