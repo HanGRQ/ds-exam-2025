@@ -136,9 +136,34 @@ export class ExamStack extends cdk.Stack {
       },
     });
 
-    topic1.addSubscription(new subs.SqsSubscription(queueA));
+    topic1.addSubscription(new subs.SqsSubscription(queueA, {
+      filterPolicyWithMessageBody: {
+        country: sns.SubscriptionFilter.filterWithMessageBody({
+          jsonPath: '$.address.country',
+          match: sns.SubscriptionFilter.stringFilter({
+            allowlist: ['Ireland', 'China']
+          })
+        })
+      }
+      
+    }));
     
-    topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn));
+    
+    topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn, {
+      filterPolicyWithMessageBody: {
+        country: sns.SubscriptionFilter.filterWithMessageBody({
+          jsonPath: '$.address.country',
+          match: sns.SubscriptionFilter.stringFilter({
+            denylist: ['Ireland', 'China']
+          })
+        })
+      }
+    }));
+
+    bucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.SnsDestination(topic1)
+    );
 
     lambdaXFn.addEventSource(new events.SqsEventSource(queueA));
 
