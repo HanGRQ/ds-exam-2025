@@ -18,7 +18,7 @@ export class ExamStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Question 1 - Serverless REST API
+    // Question 1 -- Serverless REST API
 
     // A table that stores data about a movie's crew, i.e. director, camera operators, etc.
     const table = new dynamodb.Table(this, "MoviesTable", {
