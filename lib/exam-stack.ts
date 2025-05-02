@@ -167,7 +167,11 @@ export class ExamStack extends cdk.Stack {
 
     lambdaXFn.addEventSource(new events.SqsEventSource(queueA));
 
-    
+    lambdaYFn.addEnvironment("QUEUE_B_URL", queueB.queueUrl);
+    queueB.grantSendMessages(lambdaYFn);
+
+
+
   }
 }
   
