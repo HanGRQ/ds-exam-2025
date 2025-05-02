@@ -14,6 +14,9 @@ import * as sns from "aws-cdk-lib/aws-sns";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as subs from "aws-cdk-lib/aws-sns-subscriptions";
 
+import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
+import * as path from 'path';
+
 export class ExamStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -71,6 +74,23 @@ export class ExamStack extends cdk.Stack {
     });
 
     const anEndpoint = api.root.addResource("patha");
+
+    const getCrewLambda = new lambdanode.NodejsFunction(this, 'GetCrewByMovieAndRoleLambda', {
+      entry: path.join(__dirname, '../lambdas/question1.ts'),
+      handler: 'getCrewByMovieIdAndRole',
+      runtime: lambda.Runtime.NODEJS_18_X,
+      bundling: {
+        externalModules: ['aws-sdk'],
+      },
+    });
+    
+    const crewResource = api.root.addResource('crew');
+    const moviesResource = crewResource.addResource('movies');
+    const movieIdResource = moviesResource.addResource('{movieId}');
+    movieIdResource.addMethod(
+      'GET',
+      new LambdaIntegration(getCrewLambda)
+    );
 
 
     // ==================================
